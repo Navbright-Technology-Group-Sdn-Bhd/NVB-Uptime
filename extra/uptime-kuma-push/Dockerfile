@@ -1,17 +1,13 @@
-FROM node AS build
-RUN useradd --create-home kuma
-USER kuma
-WORKDIR /home/kuma
-ARG TARGETPLATFORM
-COPY --chown=kuma:kuma ./build/ ./build/
-COPY --chown=kuma:kuma build.js build.js
-RUN node build.js $TARGETPLATFORM
+FROM golang:1.22-bookworm AS build
+WORKDIR /src
+COPY uptime-kuma-push.go .
+RUN CGO_ENABLED=0 go build -o /uptime-kuma-push uptime-kuma-push.go
 
 FROM debian:bookworm-slim AS release
 RUN useradd --create-home kuma
 USER kuma
 WORKDIR /home/kuma
-COPY --from=build /home/kuma/uptime-kuma-push ./uptime-kuma-push
+COPY --from=build /uptime-kuma-push ./uptime-kuma-push
 
 ENTRYPOINT ["/home/kuma/uptime-kuma-push"]
 
